@@ -6,24 +6,26 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer, 
-  BarChart, 
-  Bar,
-  PieChart,
-  Pie,
-  Cell
+  PieChart, 
+  Pie, 
+  Cell 
 } from "recharts";
 import { 
   TrendingUp, 
-  Globe, 
   Calendar, 
-  ArrowUp, 
   ArrowDown, 
   Activity,
   Zap,
-  LayoutGrid
+  Loader2,
+  Sparkles,
+  AlertCircle
 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/src/lib/utils";
+import React, { useState } from "react";
+import { GoogleGenAI, Type } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const trendData = [
   { day: 'Mon', organic: 400, search: 240, social: 210 },
@@ -43,7 +45,75 @@ const categoryData = [
   { name: 'Others', value: 5, color: '#8B5CF6' },
 ];
 
+interface Prognosis {
+  dominantCategory: string;
+  confidenceScore: number;
+  forecastSummary: string;
+  riskyMarkers: string[];
+  opportunityWindows: { month: string; strength: string }[];
+}
+
 export default function MarketTrends() {
+  const [isPrognosisOpen, setIsPrognosisOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [prognosis, setPrognosis] = useState<Prognosis | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = () => {
+    setExporting(true);
+    setTimeout(() => {
+      setExporting(false);
+      alert("Prognosis report exported to PDF.");
+    }, 1500);
+  };
+
+  const fetchPrognosis = async () => {
+    setLoading(true);
+    setIsPrognosisOpen(true);
+    
+    const prompt = `
+      Perform a deep-market prognosis for mid-to-late 2026 e-commerce trends.
+      Identify the single most dominant emerging category, provide a confidence score (0-100), 
+      a detailed forecast summary, 3 risky market markers, and a 4-month opportunity window roadmap.
+    `;
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              dominantCategory: { type: Type.STRING },
+              confidenceScore: { type: Type.NUMBER },
+              forecastSummary: { type: Type.STRING },
+              riskyMarkers: { type: Type.ARRAY, items: { type: Type.STRING } },
+              opportunityWindows: { 
+                type: Type.ARRAY, 
+                items: { 
+                  type: Type.OBJECT,
+                  properties: {
+                    month: { type: Type.STRING },
+                    strength: { type: Type.STRING }
+                  }
+                }
+              }
+            },
+            required: ["dominantCategory", "confidenceScore", "forecastSummary", "riskyMarkers", "opportunityWindows"]
+          }
+        }
+      });
+      
+      setPrognosis(JSON.parse(response.text));
+    } catch (error) {
+      console.error("Prognosis error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-12 pb-24">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
@@ -152,11 +222,121 @@ export default function MarketTrends() {
           <p className="mt-8 text-white/50 text-xl font-medium max-w-xl mx-auto leading-relaxed">
             Predictive modeling identifies emerging trends multiple quarters before mainstream market saturation.
           </p>
-          <button className="mt-12 bg-brand-orange text-white px-12 py-4 rounded-full text-[12px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-brand-orange/40 hover:scale-105 transition-all active:scale-95 group">
+          <button 
+            onClick={fetchPrognosis}
+            className="mt-12 bg-brand-orange text-white px-12 py-4 rounded-full text-[12px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-brand-orange/40 hover:scale-105 transition-all active:scale-95 group"
+          >
             Unlock Full Prognosis
           </button>
         </div>
       </div>
+
+      {/* Prognosis Modal */}
+      <AnimatePresence>
+        {isPrognosisOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-ink/90 backdrop-blur-xl"
+              onClick={() => setIsPrognosisOpen(false)}
+            />
+            {loading ? (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative z-10 flex flex-col items-center"
+              >
+                <Loader2 className="h-12 w-12 text-brand-orange animate-spin mb-6" />
+                <p className="editorial-label !text-white !opacity-100">Running Predictive Models...</p>
+              </motion.div>
+            ) : prognosis && (
+              <motion.div 
+                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 40, scale: 0.95 }}
+                className="relative z-10 bg-white w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+              >
+                <div className="flex flex-col lg:flex-row h-full">
+                  <div className="lg:w-1/3 bg-ink p-12 text-white border-r border-white/5">
+                    <span className="editorial-label !text-brand-orange mb-4 block">DOMINANT CATEGORY</span>
+                    <h3 className="text-5xl font-serif italic mb-10 tracking-tighter leading-none">{prognosis.dominantCategory}</h3>
+                    
+                    <div className="space-y-8">
+                      <div>
+                        <p className="editorial-label !text-white/40 mb-3">Confidence Index</p>
+                        <div className="flex items-center gap-4">
+                          <span className="text-4xl font-mono font-bold text-brand-orange">{prognosis.confidenceScore}%</span>
+                          <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${prognosis.confidenceScore}%` }}
+                              className="h-full bg-brand-orange" 
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <p className="editorial-label !text-white/40 mb-3">Volatility Risks</p>
+                        <ul className="space-y-3">
+                          {prognosis.riskyMarkers.map((marker, i) => (
+                            <li key={i} className="flex items-start gap-3 text-xs opacity-70">
+                              <AlertCircle className="h-3 w-3 text-brand-orange flex-shrink-0 mt-0.5" />
+                              {marker}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="lg:w-2/3 p-12 bg-white">
+                    <div className="flex justify-between items-center mb-10">
+                      <div className="flex items-center gap-3">
+                        <Sparkles className="h-5 w-5 text-brand-orange" />
+                        <h4 className="text-2xl font-serif italic">Market Outlook v.Pro</h4>
+                      </div>
+                      <button onClick={() => setIsPrognosisOpen(false)} className="editorial-label !opacity-40 hover:!opacity-100 transition-all">Close Report</button>
+                    </div>
+
+                    <div className="space-y-12">
+                      <p className="text-xl font-medium leading-relaxed italic opacity-80 border-l-4 border-brand-orange pl-8">
+                        "{prognosis.forecastSummary}"
+                      </p>
+
+                      <div>
+                        <p className="editorial-label !opacity-40 mb-6">OPPORTUNITY WINDOW ROADMAP</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {prognosis.opportunityWindows.map((win, i) => (
+                            <div key={i} className="p-6 bg-page-bg border border-ink/5 rounded-sm hover:border-brand-orange/30 transition-all group">
+                              <p className="editorial-label !opacity-30 mb-2">{win.month}</p>
+                              <p className="text-xs font-black uppercase tracking-widest group-hover:text-brand-orange transition-colors">{win.strength}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-8 border-t border-ink/5 flex justify-between items-center">
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Data Integrity Sync: Nominal</p>
+                        <button 
+                          onClick={handleExport}
+                          disabled={exporting}
+                          className="bg-ink text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-brand-orange transition-all flex items-center gap-2"
+                        >
+                          {exporting && <Loader2 className="h-3 w-3 animate-spin" />}
+                          {exporting ? "Exporting..." : "Export Full PDF"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

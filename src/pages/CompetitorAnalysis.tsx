@@ -34,17 +34,45 @@ const pricingData = [
 ];
 
 const initialCompetitors = [
-  { id: 1, name: "EcoHome Pro", health: "High", share: "12%", ads: "Aggressive", reviews: "4.8k", trend: [10, 15, 8, 22, 18, 25, 30] },
-  { id: 2, name: "ZestLiving", health: "Moderate", share: "8%", ads: "Normal", reviews: "2.1k", trend: [30, 28, 35, 20, 22, 15, 12] },
-  { id: 3, name: "PureNiche", health: "Rising", share: "5%", ads: "Aggressive", reviews: "0.9k", trend: [5, 8, 12, 10, 15, 18, 28] },
+  { 
+    id: 1, 
+    name: "EcoHome Pro", 
+    health: "High", 
+    share: "12%", 
+    ads: "Aggressive", 
+    reviews: "4.8k", 
+    trend: [10, 15, 8, 22, 18, 25, 30],
+    metrics: { reviewGrowth: "+14%", stability: "92%", momentum: "High" }
+  },
+  { 
+    id: 2, 
+    name: "ZestLiving", 
+    health: "Moderate", 
+    share: "8%", 
+    ads: "Normal", 
+    reviews: "2.1k", 
+    trend: [30, 28, 35, 20, 22, 15, 12],
+    metrics: { reviewGrowth: "+2%", stability: "64%", momentum: "Decreasing" }
+  },
+  { 
+    id: 3, 
+    name: "PureNiche", 
+    health: "Rising", 
+    share: "5%", 
+    ads: "Aggressive", 
+    reviews: "0.9k", 
+    trend: [5, 8, 12, 10, 15, 18, 28],
+    metrics: { reviewGrowth: "+42%", stability: "78%", momentum: "Surging" }
+  },
 ];
 
-const Sparkline = ({ data, color }: { data: number[], color: string }) => {
+const Sparkline = ({ data, color, metrics }: { data: number[], color: string, metrics: { reviewGrowth: string, stability: string, momentum: string } }) => {
+  const [isHovered, setIsHovered] = useState(false);
   const min = Math.min(...data);
   const max = Math.max(...data || [1]);
   const range = max - min || 1;
-  const width = 40;
-  const height = 12;
+  const width = 48;
+  const height = 16;
   
   const points = data.map((val, i) => {
     const x = (i / (data.length - 1)) * width;
@@ -53,16 +81,55 @@ const Sparkline = ({ data, color }: { data: number[], color: string }) => {
   }).join(' ');
 
   return (
-    <svg width={width} height={height} className="overflow-visible opacity-50">
-      <polyline
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        points={points}
-      />
-    </svg>
+    <div 
+      className="relative cursor-help pb-1"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <svg width={width} height={height} className="overflow-visible opacity-70">
+        <polyline
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={points}
+        />
+      </svg>
+      
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50 pointer-events-none"
+          >
+            <div className="bg-ink text-white p-4 rounded-lg shadow-2xl border border-white/10 min-w-[200px]">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-orange">Health Profile</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] uppercase font-bold opacity-40">Review Growth</span>
+                  <span className="text-xs font-mono font-bold text-emerald-400">{metrics.reviewGrowth}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] uppercase font-bold opacity-40">Share Stability</span>
+                  <span className="text-xs font-mono font-bold">{metrics.stability}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] uppercase font-bold opacity-40">Momentum Index</span>
+                  <span className="text-xs font-serif italic text-brand-orange">{metrics.momentum}</span>
+                </div>
+              </div>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-ink" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
@@ -81,6 +148,8 @@ export default function CompetitorAnalysis() {
     { id: '1', rivalName: 'EcoHome Pro', metric: 'Market Share', threshold: '> 15%', status: 'active' },
     { id: '2', rivalName: 'PureNiche', metric: 'Review Velocity', threshold: '> 50/week', status: 'triggered' },
   ]);
+
+  const [competitors, setCompetitors] = useState(initialCompetitors);
 
   const openAlertConfig = (rival: typeof initialCompetitors[0]) => {
     setSelectedRival(rival);
@@ -111,7 +180,24 @@ export default function CompetitorAnalysis() {
           <h1 className="text-6xl font-serif italic tracking-tighter text-ink">Competitor Analysis</h1>
           <p className="text-sm font-medium opacity-60 mt-4 lowercase tracking-tight">Track and outpace your rivals in the e-commerce landscape.</p>
         </div>
-        <button className="bg-ink text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-brand-orange transition-all shadow-xl shadow-ink/20 flex items-center">
+        <button 
+          onClick={() => {
+            const name = prompt("Enter Rival Name:");
+            if (name) {
+              setCompetitors([...competitors, {
+                id: Date.now(),
+                name,
+                health: "Moderate",
+                share: "0%",
+                ads: "Normal",
+                reviews: "0",
+                trend: [0, 0, 0, 0, 0, 0, 5],
+                metrics: { reviewGrowth: "0%", stability: "100%", momentum: "Passive" }
+              }]);
+            }
+          }}
+          className="bg-ink text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-brand-orange transition-all shadow-xl shadow-ink/20 flex items-center"
+        >
           <Plus className="mr-2 h-3.5 w-3.5" />
           Track New Rival
         </button>
@@ -150,7 +236,7 @@ export default function CompetitorAnalysis() {
               <h3 className="text-2xl font-serif italic">Rivalry Watchlist</h3>
             </div>
             <div className="divide-y divide-ink/5">
-              {initialCompetitors.map((comp) => (
+              {competitors.map((comp) => (
                 <div key={comp.id} className="px-10 py-8 flex items-center justify-between hover:bg-brand-orange/[0.02] transition-colors group">
                   <div className="flex items-center gap-6">
                     <div className="h-14 w-14 bg-page-bg border border-ink/5 rounded flex items-center justify-center font-serif italic text-xl group-hover:border-brand-orange/30 transition-all">
@@ -159,7 +245,11 @@ export default function CompetitorAnalysis() {
                     <div>
                       <div className="flex items-center gap-3 mb-2">
                         <h4 className="text-lg font-serif italic leading-none">{comp.name}</h4>
-                        <Sparkline data={comp.trend} color={comp.trend[comp.trend.length - 1] > comp.trend[0] ? '#10b981' : '#ef4444'} />
+                        <Sparkline 
+                          data={comp.trend} 
+                          color={comp.trend[comp.trend.length - 1] > comp.trend[0] ? '#10b981' : '#ef4444'} 
+                          metrics={comp.metrics}
+                        />
                       </div>
                       <p className="editorial-label !text-[9px] !opacity-30">{comp.reviews} reviews · {comp.share} market penetration</p>
                     </div>
@@ -182,7 +272,10 @@ export default function CompetitorAnalysis() {
                         Configure
                       </button>
                     </div>
-                    <button className="p-3 border border-ink/10 rounded-full hover:bg-ink hover:text-white transition-all">
+                    <button 
+                      onClick={() => alert(`Reviewing strategic vector for ${comp.name}. Convergence analysis pending.`)}
+                      className="p-3 border border-ink/10 rounded-full hover:bg-ink hover:text-white transition-all"
+                    >
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>

@@ -8,6 +8,12 @@ export interface AINiche {
   reason: string;
   estimatedDifficulty: "Low" | "Medium" | "High";
   potentialRevenue: string;
+  opportunityScore: number;
+  breakdown?: {
+    demand: number;
+    competition: number;
+    growth: number;
+  };
 }
 
 export async function generateNicheIdeas(interests?: string): Promise<AINiche[]> {
@@ -17,7 +23,7 @@ export async function generateNicheIdeas(interests?: string): Promise<AINiche[]>
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: prompt + "Provide the output in JSON format with fields: name, category, reason, estimatedDifficulty, potentialRevenue.",
+    contents: prompt + "Provide the output in JSON format with fields: name, category, reason, estimatedDifficulty, potentialRevenue, opportunityScore (0-100), and a breakdown object with numeric scores (0-100) for demand, competition (where 100 is low competition/good), and growth.",
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -30,8 +36,18 @@ export async function generateNicheIdeas(interests?: string): Promise<AINiche[]>
             reason: { type: Type.STRING },
             estimatedDifficulty: { type: Type.STRING, enum: ["Low", "Medium", "High"] },
             potentialRevenue: { type: Type.STRING },
+            opportunityScore: { type: Type.NUMBER },
+            breakdown: {
+              type: Type.OBJECT,
+              properties: {
+                demand: { type: Type.NUMBER },
+                competition: { type: Type.NUMBER },
+                growth: { type: Type.NUMBER },
+              },
+              required: ["demand", "competition", "growth"],
+            },
           },
-          required: ["name", "category", "reason", "estimatedDifficulty", "potentialRevenue"],
+          required: ["name", "category", "reason", "estimatedDifficulty", "potentialRevenue", "opportunityScore", "breakdown"],
         },
       },
     },
