@@ -13,6 +13,12 @@ export interface AmazonProduct {
   opportunityScore: number;
   priceStability: number; // 0-100 indicating how stable the price is (Keepa-style)
   bsrHistory: number[]; // Last 7 days simulation
+  price?: number;
+  fees?: number;
+  netProfit?: number;
+  margin?: number;
+  weight?: string;
+  dimensions?: string;
   breakdown?: {
     demand: number;
     competition: number;
@@ -20,13 +26,15 @@ export interface AmazonProduct {
   };
 }
 
-export async function fetchAmazonTrendingProducts(category: string = "All Categories", region: string = "US"): Promise<AmazonProduct[]> {
+export async function fetchAmazonTrendingProducts(category: string = "All Categories", region: string = "UK"): Promise<AmazonProduct[]> {
+  const currency = region === 'UK' ? 'GBP' : 'USD';
   const prompt = `
     You are an e-commerce market analyst specializing in Amazon FBA product research in the ${region} region.
-    Identify 6 real-world trending product archetypes on Amazon for the category: "${category}" specifically for the ${region} marketplace.
-    Consider local trends, currency (${region === 'UK' ? 'GBP' : 'USD'}), and consumer behavior in ${region}.
+    Identify 10 real-world trending product archetypes on Amazon for the category: "${category}" specifically for the ${region} marketplace.
+    Consider local trends, currency (${currency}), and consumer behavior in ${region}.
     These should be high-growth, underserved niches that are currently trending in early 2026.
     Include a 'breakdown' object with numeric scores (0-100) for demand, competition, and growth.
+    Also include estimated 'price', 'fees' (Amazon referral + FBA), and 'netProfit' (after COGS and fees) in ${currency}.
     Provide the output in JSON format.
   `;
 
@@ -51,6 +59,12 @@ export async function fetchAmazonTrendingProducts(category: string = "All Catego
               opportunityScore: { type: Type.NUMBER },
               priceStability: { type: Type.NUMBER },
               bsrHistory: { type: Type.ARRAY, items: { type: Type.NUMBER } },
+              price: { type: Type.NUMBER },
+              fees: { type: Type.NUMBER },
+              netProfit: { type: Type.NUMBER },
+              margin: { type: Type.NUMBER },
+              weight: { type: Type.STRING },
+              dimensions: { type: Type.STRING },
               breakdown: {
                 type: Type.OBJECT,
                 properties: {
@@ -61,7 +75,7 @@ export async function fetchAmazonTrendingProducts(category: string = "All Catego
                 required: ["demand", "competition", "growth"],
               },
             },
-            required: ["name", "category", "bsr", "monthlySales", "revenue", "rating", "trend", "opportunityScore", "priceStability", "bsrHistory", "breakdown"]
+            required: ["name", "category", "bsr", "monthlySales", "revenue", "rating", "trend", "opportunityScore", "priceStability", "bsrHistory", "breakdown", "price", "fees", "netProfit"]
           }
         }
       }

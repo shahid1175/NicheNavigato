@@ -37,6 +37,7 @@ const initialCompetitors = [
   { 
     id: 1, 
     name: "EcoHome Pro", 
+    region: "UK",
     health: "High", 
     share: "12%", 
     ads: "Aggressive", 
@@ -47,6 +48,7 @@ const initialCompetitors = [
   { 
     id: 2, 
     name: "ZestLiving", 
+    region: "US",
     health: "Moderate", 
     share: "8%", 
     ads: "Normal", 
@@ -57,12 +59,46 @@ const initialCompetitors = [
   { 
     id: 3, 
     name: "PureNiche", 
+    region: "UK",
     health: "Rising", 
     share: "5%", 
     ads: "Aggressive", 
     reviews: "0.9k", 
     trend: [5, 8, 12, 10, 15, 18, 28],
     metrics: { reviewGrowth: "+42%", stability: "78%", momentum: "Surging" }
+  },
+  { 
+    id: 4, 
+    name: "Swift Logistics UK", 
+    region: "UK",
+    health: "Stable", 
+    share: "15%", 
+    ads: "Low", 
+    reviews: "6.2k", 
+    trend: [20, 21, 19, 20, 22, 21, 23],
+    metrics: { reviewGrowth: "+1%", stability: "98%", momentum: "Steady" }
+  },
+  { 
+    id: 5, 
+    name: "VitaGear", 
+    region: "US",
+    health: "High", 
+    share: "4%", 
+    ads: "Aggressive", 
+    reviews: "1.2k", 
+    trend: [2, 10, 25, 45, 60, 85, 95],
+    metrics: { reviewGrowth: "+120%", stability: "45%", momentum: "Explosive" }
+  },
+  { 
+    id: 6, 
+    name: "Alpine Essentials", 
+    region: "EU",
+    health: "Moderate", 
+    share: "7%", 
+    ads: "Normal", 
+    reviews: "3.4k", 
+    trend: [15, 12, 14, 18, 16, 17, 19],
+    metrics: { reviewGrowth: "+5%", stability: "85%", momentum: "Growing" }
   },
 ];
 
@@ -151,9 +187,15 @@ export default function CompetitorAnalysis() {
 
   const [competitors, setCompetitors] = useState(initialCompetitors);
 
+  const [selectedRivalForView, setSelectedRivalForView] = useState<typeof initialCompetitors[0] | null>(null);
+
   const openAlertConfig = (rival: typeof initialCompetitors[0]) => {
     setSelectedRival(rival);
     setIsAlertModalOpen(true);
+  };
+
+  const openStrategicReport = (rival: typeof initialCompetitors[0]) => {
+    setSelectedRivalForView(rival);
   };
 
   const saveAlert = (e: React.FormEvent) => {
@@ -184,9 +226,11 @@ export default function CompetitorAnalysis() {
           onClick={() => {
             const name = prompt("Enter Rival Name:");
             if (name) {
+              const region = prompt("Enter Market (US, UK, EU):") || "UK";
               setCompetitors([...competitors, {
                 id: Date.now(),
                 name,
+                region,
                 health: "Moderate",
                 share: "0%",
                 ads: "Normal",
@@ -220,7 +264,7 @@ export default function CompetitorAnalysis() {
                 <BarChart data={pricingData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#14141410" />
                   <XAxis dataKey="brand" axisLine={false} tickLine={false} tick={{fill: '#14141440', fontSize: 10, fontWeight: 700}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#14141440', fontSize: 10, fontWeight: 700}} dx={-10} prefix="$" />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#14141440', fontSize: 10, fontWeight: 700}} dx={-10} prefix="£" />
                   <Tooltip 
                     cursor={{fill: '#14141405'}}
                     contentStyle={{ backgroundColor: '#141414', border: 'none', borderRadius: '4px', color: '#fff' }}
@@ -245,6 +289,9 @@ export default function CompetitorAnalysis() {
                     <div>
                       <div className="flex items-center gap-3 mb-2">
                         <h4 className="text-lg font-serif italic leading-none">{comp.name}</h4>
+                        <div className="px-1.5 py-0.5 bg-ink/5 rounded text-[7px] font-black uppercase tracking-widest opacity-40">
+                          {comp.region}
+                        </div>
                         <Sparkline 
                           data={comp.trend} 
                           color={comp.trend[comp.trend.length - 1] > comp.trend[0] ? '#10b981' : '#ef4444'} 
@@ -273,8 +320,8 @@ export default function CompetitorAnalysis() {
                       </button>
                     </div>
                     <button 
-                      onClick={() => alert(`Reviewing strategic vector for ${comp.name}. Convergence analysis pending.`)}
-                      className="p-3 border border-ink/10 rounded-full hover:bg-ink hover:text-white transition-all"
+                      onClick={() => openStrategicReport(comp)}
+                      className="p-3 border border-ink/10 rounded-full hover:bg-ink hover:text-white transition-all group-hover:border-brand-orange/30 shadow-sm"
                     >
                       <ArrowRight className="h-4 w-4" />
                     </button>
@@ -413,6 +460,79 @@ export default function CompetitorAnalysis() {
                     </p>
                   </div>
                 </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Strategic Report Modal */}
+      <AnimatePresence>
+        {selectedRivalForView && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-ink/90 backdrop-blur-md"
+              onClick={() => setSelectedRivalForView(null)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-page-bg w-full max-w-2xl rounded-2xl overflow-hidden border border-white/20 shadow-2xl"
+            >
+              <div className="p-10 bg-ink text-white">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <BarChart3 className="h-4 w-4 text-brand-orange" />
+                      <span className="editorial-label !text-white/40">Strategic Analysis Report</span>
+                    </div>
+                    <h2 className="text-4xl font-serif italic tracking-tighter">Vector: {selectedRivalForView.name}</h2>
+                  </div>
+                  <button onClick={() => setSelectedRivalForView(null)} className="p-2 hover:bg-white/10 rounded-full transition-all">
+                    <X className="h-6 w-6 text-white/50" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-12 space-y-10">
+                <div className="grid grid-cols-2 gap-10">
+                  <div className="space-y-6">
+                    <h4 className="editorial-label !opacity-30">Vulnerability Metrics</h4>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center py-2 border-b border-ink/5">
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Supply Chain Stability</span>
+                        <span className="text-xs font-mono font-bold text-emerald-600">94%</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-ink/5">
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Inventory Risk Index</span>
+                        <span className="text-xs font-mono font-bold text-rose-500">Low</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-ink/5">
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Pricing Floor</span>
+                        <span className="text-xs font-mono font-bold">£22.50</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-6">
+                    <h4 className="editorial-label !opacity-30">Moat Strength</h4>
+                    <div className="p-6 bg-brand-orange/5 rounded-xl border border-brand-orange/10 italic font-serif text-ink opacity-80 leading-relaxed">
+                      "{selectedRivalForView.name} exhibits strong brand loyalty within the {selectedRivalForView.region} market. Strategic recommendation: focus on bundle differentiation and review velocity optimization."
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-ink/5 flex gap-4">
+                  <button className="flex-1 bg-ink text-white py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-brand-orange transition-all active:scale-95">
+                    Generate Full Deep-Dive
+                  </button>
+                  <button className="px-6 border border-ink/10 rounded-xl hover:bg-page-bg transition-all text-[10px] font-black uppercase" onClick={() => setSelectedRivalForView(null)}>
+                    Export
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

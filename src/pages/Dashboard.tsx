@@ -22,6 +22,7 @@ import {
 } from "recharts";
 import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";
+import { Link } from "react-router-dom";
 
 const data = [
   { name: 'Jan', sales: 4000, trends: 2400 },
@@ -35,7 +36,7 @@ const data = [
 
 const stats = [
   { name: 'Active Niches', value: '12', change: '+2', trend: 'up', icon: Target },
-  { name: 'Monthly Revenue', value: '$45,231.89', change: '+12.5%', trend: 'up', icon: DollarSign },
+  { name: 'Monthly Revenue', value: '£45,231.89', change: '+12.5%', trend: 'up', icon: DollarSign },
   { name: 'Market Volatility', value: 'Moderate', change: '-4%', trend: 'down', icon: Zap },
   { name: 'Competitor Mentions', value: '2.4k', change: '+18%', trend: 'up', icon: Users },
 ];
@@ -128,9 +129,9 @@ export default function Dashboard() {
                 "Eco-Friendly Home Office" niche is up 45% in search volume. 
                 Competition score: Low.
               </p>
-              <button className="mt-8 bg-white text-brand-orange px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-page-bg transition-all active:scale-95 shadow-xl shadow-brand-orange/20">
+              <Link to="/product-database" className="mt-8 bg-white text-brand-orange px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-page-bg transition-all active:scale-95 shadow-xl shadow-brand-orange/20 inline-block text-center">
                 Analyze Archetype
-              </button>
+              </Link>
             </div>
           </div>
 

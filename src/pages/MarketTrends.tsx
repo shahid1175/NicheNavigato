@@ -58,12 +58,13 @@ export default function MarketTrends() {
   const [loading, setLoading] = useState(false);
   const [prognosis, setPrognosis] = useState<Prognosis | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [region, setRegion] = useState("UK");
 
   const handleExport = () => {
     setExporting(true);
     setTimeout(() => {
       setExporting(false);
-      alert("Prognosis report exported to PDF.");
+      alert(`Prognosis report for ${region} exported to PDF.`);
     }, 1500);
   };
 
@@ -72,8 +73,8 @@ export default function MarketTrends() {
     setIsPrognosisOpen(true);
     
     const prompt = `
-      Perform a deep-market prognosis for mid-to-late 2026 e-commerce trends.
-      Identify the single most dominant emerging category, provide a confidence score (0-100), 
+      Perform a deep-market prognosis for mid-to-late 2026 e-commerce trends specifically for the ${region} market.
+      Identify the single most dominant emerging category in the ${region}, provide a confidence score (0-100), 
       a detailed forecast summary, 3 risky market markers, and a 4-month opportunity window roadmap.
     `;
 
@@ -119,11 +120,27 @@ export default function MarketTrends() {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>
           <h1 className="text-6xl font-serif italic tracking-tighter text-ink">Market Trends</h1>
-          <p className="text-sm font-medium opacity-60 mt-4 lowercase tracking-tight">Global e-commerce trajectory and category performance analytics.</p>
+          <p className="text-sm font-medium opacity-60 mt-4 lowercase tracking-tight">{region} e-commerce trajectory and category performance analytics.</p>
         </div>
-        <div className="flex items-center space-x-2 bg-white px-5 py-2.5 rounded-full border border-ink/10">
-          <Calendar className="h-4 w-4 text-brand-orange" />
-          <span className="text-[10px] font-black text-ink uppercase tracking-widest">May 01 — May 07, 2026</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-page-bg border border-ink/5 p-1 rounded-full">
+            {["US", "UK"].map((r) => (
+              <button
+                key={r}
+                onClick={() => setRegion(r)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all",
+                  region === r ? "bg-ink text-white shadow-lg shadow-ink/20" : "opacity-40 hover:opacity-100"
+                )}
+              >
+                {r} Market
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center space-x-2 bg-white px-5 py-2.5 rounded-full border border-ink/10">
+            <Calendar className="h-4 w-4 text-brand-orange" />
+            <span className="text-[10px] font-black text-ink uppercase tracking-widest">May 01 — May 07, 2026</span>
+          </div>
         </div>
       </header>
 
@@ -131,7 +148,7 @@ export default function MarketTrends() {
         <div className="lg:col-span-3 editorial-card p-10">
           <div className="flex items-center justify-between mb-12">
             <div className="flex items-center gap-8">
-              <h3 className="text-3xl font-serif italic">Search Volume Analysis</h3>
+              <h3 className="text-3xl font-serif italic">{region} Search Volume</h3>
               <div className="flex items-center gap-6">
                 <span className="flex items-center editorial-label !opacity-100">
                   <div className="w-2 h-2 rounded-full bg-brand-orange mr-2" />
@@ -161,7 +178,7 @@ export default function MarketTrends() {
         </div>
 
         <div className="editorial-card p-10 flex flex-col items-center">
-          <h3 className="text-2xl font-serif italic mb-10 w-full">Global Share</h3>
+          <h3 className="text-2xl font-serif italic mb-10 w-full">{region} Market Share</h3>
           <div className="h-[250px] w-full relative mb-12">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

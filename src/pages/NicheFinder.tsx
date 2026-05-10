@@ -45,13 +45,18 @@ export default function NicheFinder() {
     return localStorage.getItem("auto_save_enabled") === "true";
   });
 
-  const [region, setRegion] = useState("Global");
+  const [region, setRegion] = useState("UK");
   const [isParamsModalOpen, setIsParamsModalOpen] = useState(false);
   const [minScore, setMinScore] = useState(0);
 
+  const currency = region === "UK" ? "£" : "$";
+
   const filteredMockNiches = mockNiches.filter(n => 
     n.name.toLowerCase().includes(searchTerm.toLowerCase()) && n.score >= minScore
-  );
+  ).map(n => ({
+    ...n,
+    revenue: n.revenue.replace('$', currency)
+  }));
 
   const handleBulkScan = () => {
     setAiLoading(true);
@@ -64,7 +69,7 @@ export default function NicheFinder() {
   const handleGenerateAI = async () => {
     setAiLoading(true);
     try {
-      const ideas = await generateNicheIdeas(interests);
+      const ideas = await generateNicheIdeas(interests, region);
       setAiNiches(ideas);
       
       if (autoSave) {
@@ -98,7 +103,7 @@ export default function NicheFinder() {
   const handleAmazonScan = async () => {
     setAmazonLoading(true);
     try {
-      const data = await fetchAmazonTrendingProducts(interests || "Trending Archetypes", region === "Global" ? "US" : region);
+      const data = await fetchAmazonTrendingProducts(interests || "Trending Archetypes", region);
       setAmazonProducts(data);
     } catch (error) {
       console.error(error);
@@ -135,6 +140,20 @@ export default function NicheFinder() {
           <p className="text-sm font-medium opacity-60 mt-4 lowercase tracking-tight">Systematic discovery of market inefficiencies and high-potential archetypes.</p>
         </div>
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-page-bg border border-ink/5 p-1 rounded-full hidden lg:flex mr-4">
+            {["Global", "UK"].map((r) => (
+              <button
+                key={r}
+                onClick={() => setRegion(r)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all",
+                  region === r ? "bg-ink text-white shadow-lg shadow-ink/20" : "opacity-40 hover:opacity-100"
+                )}
+              >
+                {r === "Global" ? "US Market" : "UK Market"}
+              </button>
+            ))}
+          </div>
           <button 
             onClick={() => setIsParamsModalOpen(true)}
             className="editorial-label border border-ink/10 px-6 py-2.5 rounded-full hover:bg-ink hover:text-white transition-all flex items-center"
@@ -180,7 +199,7 @@ export default function NicheFinder() {
               <div className="flex items-center gap-4 bg-page-bg p-2 rounded-full border border-ink/5 focus-within:border-brand-orange transition-all">
                 <input 
                   type="text" 
-                  placeholder="e.g. Sustainable gardening, Pet technology..." 
+                  placeholder={`e.g. ${region === "UK" ? "Eco Water Bottles" : "Sustainable gardening"}...`} 
                   className="flex-1 bg-transparent border-none outline-none px-6 py-2 text-sm font-medium"
                   value={interests}
                   onChange={(e) => setInterests(e.target.value)}
@@ -191,7 +210,7 @@ export default function NicheFinder() {
                   className="bg-ink text-white px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-50 flex items-center transition-all"
                 >
                   {aiLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2 text-brand-orange" />}
-                  Synthesize
+                  Synthesize {region === "UK" ? "UK" : "US"}
                 </button>
                 <button 
                   onClick={handleAmazonScan}
@@ -199,7 +218,7 @@ export default function NicheFinder() {
                   className="bg-white text-ink border border-ink/10 px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest disabled:opacity-50 flex items-center transition-all hover:bg-ink hover:text-white"
                 >
                   {amazonLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Box className="h-4 w-4 mr-2 text-[#FF9900]" />}
-                  Amazon Hot-Scan
+                  Amazon {region === "UK" ? "UK" : "US"} Scan
                 </button>
               </div>
             </div>
@@ -241,37 +260,28 @@ export default function NicheFinder() {
                       className="editorial-card p-6 bg-page-bg border border-ink/5 hover:border-[#FF9900]/30 transition-all group"
                     >
                       <div className="flex justify-between items-start mb-4">
-                        <span className="editorial-label !text-[#FF9900] !opacity-100">{prod.category}</span>
+                        <div className="flex flex-col">
+                          <span className="editorial-label !text-[#FF9900] !opacity-100">{prod.category}</span>
+                          <span className="text-[7px] font-black uppercase tracking-widest text-[#FF9900]/60 mt-0.5">Amazon {region} Sourcing</span>
+                        </div>
                         <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => saveNicheManual({
-                              name: prod.name,
-                              category: prod.category,
-                              reason: `Amazon trending product with BSR ${prod.bsr}. Monthly revenue of ${prod.revenue}.`,
-                              estimatedDifficulty: prod.opportunityScore > 80 ? "Low" : "Medium",
-                              potentialRevenue: prod.revenue,
-                              opportunityScore: prod.opportunityScore
-                            })}
-                            className={cn(
-                              "p-1 rounded-full transition-all hover:bg-ink hover:text-white",
-                              savedNiches.find(s => s.name === prod.name) ? "text-[#FF9900] bg-[#FF9900]/5" : "opacity-20"
-                            )}
-                          >
-                            <Star className="w-3 h-3 fill-current" />
-                          </button>
+                          <div className="flex flex-col items-center justify-center w-10 h-10 bg-white border-2 border-[#FF9900] text-[#FF9900] rounded-full shadow-lg shadow-[#FF9900]/10">
+                            <span className="font-mono font-black text-xs leading-none">{prod.opportunityScore}</span>
+                            <span className="text-[5px] font-black uppercase tracking-[0.05em] mt-0.5">Index</span>
+                          </div>
                           <div className={cn(
-                            "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                            "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest h-fit",
                             prod.trend === 'Explosive' ? "bg-rose-500 text-white" : "bg-ink text-white opacity-40"
                           )}>
                             {prod.trend}
                           </div>
                         </div>
                       </div>
-                      <h5 className="text-lg font-serif italic mb-4 leading-tight group-hover:text-[#FF9900] transition-colors">{prod.name}</h5>
+                      <h5 className="text-lg font-serif italic mb-4 leading-tight group-hover:text-[#FF9900] transition-colors pr-12">{prod.name}</h5>
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
                           <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-1">BSR</p>
-                          <p className="text-xs font-mono font-bold">{prod.bsr}</p>
+                          <p className="text-xs font-mono font-bold">#{prod.bsr}</p>
                         </div>
                         <div>
                           <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-1">Mo. Revenue</p>
@@ -281,57 +291,107 @@ export default function NicheFinder() {
 
                       <div className="mb-6 p-3 bg-ink/5 rounded-sm">
                         <div className="flex justify-between items-center mb-2">
-                          <p className="text-[8px] font-black uppercase tracking-widest opacity-30">BSR Velocity (7D)</p>
-                          <span className="text-[9px] font-mono font-bold text-emerald-500">Keepa Verified</span>
+                          <p className="text-[8px] font-black uppercase tracking-widest opacity-30">7D Velocity Index</p>
+                          <div className="flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[9px] font-mono font-bold text-emerald-600">LIVE FEED</span>
+                          </div>
                         </div>
-                        <div className="h-8 flex items-end gap-1 px-1">
+                        <div className="h-10 flex items-end gap-1.5 px-1">
                           {prod.bsrHistory.map((val, i) => (
                             <div 
                               key={i} 
-                              className="flex-1 bg-ink/20 rounded-t-sm transition-all hover:bg-brand-orange" 
-                              style={{ height: `${Math.max(10, val)}%` }} 
-                            />
+                              className="flex-1 bg-ink/10 rounded-t-sm transition-all hover:bg-[#FF9900] relative group/bar" 
+                              style={{ height: `${Math.max(15, val)}%` }} 
+                            >
+                              <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-ink text-white text-[8px] px-1.5 py-0.5 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                {val}%
+                              </div>
+                            </div>
                           ))}
                         </div>
-                        <div className="flex justify-between mt-2 pt-2 border-t border-ink/5">
-                          <div className="flex flex-col gap-1 w-full">
-                            <div className="flex justify-between items-center text-[7px] font-black uppercase tracking-widest opacity-30">
+                        <div className="flex justify-between mt-3 pt-3 border-t border-ink/5 items-center">
+                          <div className="flex flex-col gap-1.5 w-full">
+                            <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest opacity-40">
                               <span>Demand / Comp / Growth</span>
-                              <span className="text-brand-orange">SCORE: {prod.opportunityScore}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="opacity-60">{region} ESTIMATE: {currency}{prod.revenue}</span>
+                              </div>
                             </div>
                             <div className="flex gap-1 h-1.5">
-                              <div className="flex-1 bg-emerald-500 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-500/30" />
-                                <div className="h-full bg-emerald-500 -mt-1.5" style={{ width: `${prod.breakdown?.demand}%` }} />
+                              <div className="flex-1 bg-emerald-500/20 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500" style={{ width: `${prod.breakdown?.demand}%` }} />
                               </div>
-                              <div className="flex-1 bg-amber-500 rounded-full overflow-hidden">
-                                <div className="h-full bg-amber-500/30" />
-                                <div className="h-full bg-amber-500 -mt-1.5" style={{ width: `${prod.breakdown?.competition}%` }} />
+                              <div className="flex-1 bg-amber-500/20 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-500" style={{ width: `${prod.breakdown?.competition}%` }} />
                               </div>
-                              <div className="flex-1 bg-brand-orange rounded-full overflow-hidden">
-                                <div className="h-full bg-brand-orange/30" />
-                                <div className="h-full bg-brand-orange -mt-1.5" style={{ width: `${prod.breakdown?.growth}%` }} />
+                              <div className="flex-1 bg-brand-orange/20 rounded-full overflow-hidden">
+                                <div className="h-full bg-brand-orange" style={{ width: `${prod.breakdown?.growth}%` }} />
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-ink/5">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 text-brand-orange fill-current" />
-                          <span className="text-[10px] font-bold">{prod.rating}</span>
-                        </div>
-                        <a 
-                          href={region === "UK" ? `https://www.amazon.co.uk/s?k=${encodeURIComponent(prod.name)}` : `https://www.amazon.com/s?k=${encodeURIComponent(prod.name)}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest opacity-30 hover:opacity-100 hover:text-[#FF9900] transition-all"
+
+                      <div className="space-y-3">
+                        <button 
+                          onClick={() => saveNicheManual({
+                            name: prod.name,
+                            category: prod.category,
+                            reason: `Amazon UK trending archetype. BSR: ${prod.bsr}. Monthly Revenue: ${prod.revenue}. Observed explosive ${prod.trend} trend.`,
+                            estimatedDifficulty: prod.opportunityScore > 85 ? "Low" : "Medium",
+                            potentialRevenue: prod.revenue,
+                            opportunityScore: prod.opportunityScore
+                          })}
+                          className={cn(
+                            "w-full py-3 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                            savedNiches.find(s => s.name === prod.name) 
+                              ? "bg-brand-orange/10 text-brand-orange border border-brand-orange/20 cursor-default" 
+                              : "bg-ink text-white hover:bg-[#FF9900] shadow-lg shadow-ink/10"
+                          )}
                         >
-                          Verify on Amazon {region === "UK" ? "UK" : "US"}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
+                          {savedNiches.find(s => s.name === prod.name) ? (
+                            <>
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              Saved to Ledger
+                            </>
+                          ) : (
+                            <>
+                              <Star className="w-3.5 h-3.5" />
+                              Save Research Archetype
+                            </>
+                          )}
+                        </button>
+                        
+                        <div className="flex items-center justify-between px-2">
+                          <div className="flex items-center gap-1 opacity-50">
+                            <Star className="w-3 h-3 text-brand-orange fill-current" />
+                            <span className="text-[10px] font-bold">{prod.rating}</span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <a 
+                              href={region === "UK" ? `https://www.amazon.co.uk/s?k=${encodeURIComponent(prod.name)}` : `https://www.amazon.com/s?k=${encodeURIComponent(prod.name)}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest opacity-30 hover:opacity-100 hover:text-[#FF9900] transition-all"
+                            >
+                              Amazon {region}
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                            <a 
+                              href={`https://keepa.com/#!search/2-${encodeURIComponent(prod.name)}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest opacity-30 hover:opacity-100 hover:text-emerald-600 transition-all"
+                            >
+                              Keepa
+                              <TrendingUp className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
                       </div>
                     </motion.div>
+
                   ))}
                 </div>
               </motion.div>
@@ -411,28 +471,11 @@ export default function NicheFinder() {
           <Search className="h-4 w-4 opacity-30" />
           <input 
             type="text" 
-            placeholder="Search Global Database..." 
+            placeholder={`Search ${region === "UK" ? "Amazon UK" : "Global"} Database...`} 
             className="bg-transparent border-none outline-none text-xl font-serif italic w-full text-ink placeholder:opacity-20"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
-        <div className="flex items-center gap-3 border-l border-ink/10 pl-8 hidden lg:flex">
-          <Globe className="h-3.5 w-3.5 opacity-30" />
-          <div className="flex gap-1 p-1 bg-page-bg border border-ink/5 rounded-full">
-            {["Global", "UK"].map((r) => (
-              <button
-                key={r}
-                onClick={() => setRegion(r)}
-                className={cn(
-                  "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all",
-                  region === r ? "bg-ink text-white" : "opacity-40 hover:opacity-100"
-                )}
-              >
-                {r === "Global" ? "US/Global" : "UK Market"}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -460,15 +503,23 @@ export default function NicheFinder() {
                   className="hover:bg-brand-orange/[0.03] transition-colors group cursor-pointer"
                 >
                   <td className="px-8 py-6 whitespace-nowrap">
-                    <div className="flex items-center">
+                    <a 
+                      href={region === "UK" ? `https://www.amazon.co.uk/s?k=${encodeURIComponent(niche.name)}` : `https://www.amazon.com/s?k=${encodeURIComponent(niche.name)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center group/link"
+                    >
                       <div className="h-12 w-12 flex-shrink-0 bg-page-bg border border-ink/5 rounded overflow-hidden flex items-center justify-center p-2 group-hover:border-brand-orange/30 transition-all">
                         <ShoppingBag className="h-full w-full opacity-20 group-hover:text-brand-orange group-hover:opacity-100 transition-all" />
                       </div>
                       <div className="ml-5">
-                        <div className="text-base font-serif italic text-ink">{niche.name}</div>
-                        <div className="editorial-label !text-[9px] !opacity-30">Home & Kitchen Archetype</div>
+                        <div className="text-base font-serif italic text-ink group-hover/link:text-brand-orange transition-colors flex items-center gap-2">
+                          {niche.name}
+                          <ExternalLink className="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                        </div>
+                        <div className="editorial-label !text-[9px] !opacity-30">{region === "UK" ? "Amazon.co.uk" : "Amazon.com"} Archetype</div>
                       </div>
-                    </div>
+                    </a>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
                     <span className={cn(

@@ -16,10 +16,10 @@ export interface AINiche {
   };
 }
 
-export async function generateNicheIdeas(interests?: string): Promise<AINiche[]> {
+export async function generateNicheIdeas(interests?: string, region: string = "UK"): Promise<AINiche[]> {
   const prompt = interests 
-    ? `Based on these interests: "${interests}", generate 5 profitable and unique e-commerce niche ideas for 2026. `
-    : "Generate 5 highly profitable and emerging e-commerce niche ideas for 2026. ";
+    ? `Based on these interests: "${interests}", generate 10 profitable and unique e-commerce niche ideas for 2026 for the ${region} market. `
+    : `Generate 10 highly profitable and emerging e-commerce niche ideas for 2026 for the ${region} market. `;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
@@ -58,5 +58,79 @@ export async function generateNicheIdeas(interests?: string): Promise<AINiche[]>
   } catch (e) {
     console.error("Failed to parse AI response", e);
     return [];
+  }
+}
+
+export async function generateSuppliers(productName: string, category: string): Promise<any[]> {
+  const prompt = `
+    You are a global sourcing agent. For the product "${productName}" in category "${category}", identify 4 high-quality manufacturers in China (Alibaba/1688 style).
+    Provide data for a professional dashboard in JSON format.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            factoryName: { type: Type.STRING },
+            verification: { type: Type.STRING },
+            priceRange: { type: Type.STRING },
+            moq: { type: Type.NUMBER },
+            leadTime: { type: Type.STRING },
+            advantages: { type: Type.ARRAY, items: { type: Type.STRING } },
+            shippingEstimate: { type: Type.NUMBER },
+            rating: { type: Type.NUMBER },
+            trustScore: { type: Type.NUMBER },
+            isTradeAssurance: { type: Type.BOOLEAN },
+            isoCertified: { type: Type.BOOLEAN },
+            onSiteChecked: { type: Type.BOOLEAN }
+          },
+          required: ["factoryName", "verification", "priceRange", "moq", "leadTime", "advantages", "shippingEstimate", "rating", "trustScore", "isTradeAssurance", "isoCertified", "onSiteChecked"]
+        }
+      }
+    }
+  });
+
+  try {
+    const rawText = response.text;
+    return JSON.parse(rawText);
+  } catch (e) {
+    console.error("Failed to parse Supplier response", e);
+    // Fallback Mock Data
+    return [
+      {
+        factoryName: "Shenzhen Precision Manufacturing Co.",
+        verification: "Gold Supplier 12Yrs",
+        priceRange: "£2.50 - £4.80",
+        moq: 500,
+        leadTime: "15-20 Days",
+        advantages: ["Low MOQ", "OEM Support", "Quality Control"],
+        shippingEstimate: 1.20,
+        rating: 4.8,
+        trustScore: 92,
+        isTradeAssurance: true,
+        isoCertified: true,
+        onSiteChecked: true
+      },
+      {
+        factoryName: "Ningbo Global Exports Ltd.",
+        verification: "Verified Pro",
+        priceRange: "£1.80 - £3.50",
+        moq: 1000,
+        leadTime: "25-30 Days",
+        advantages: ["Price Leader", "High Capacity", "Direct Factory"],
+        shippingEstimate: 0.95,
+        rating: 4.5,
+        trustScore: 88,
+        isTradeAssurance: true,
+        isoCertified: false,
+        onSiteChecked: true
+      }
+    ];
   }
 }

@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";
+import { useState } from "react";
 
 const salesData = [
   { date: '2026-05-01', revenue: 1200, units: 14, profit: 450 },
@@ -35,6 +36,9 @@ const salesData = [
 ];
 
 export default function SalesTracker() {
+  const [region, setRegion] = useState("UK");
+  const currency = region === "UK" ? "£" : "$";
+
   return (
     <div className="space-y-12 pb-24">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
@@ -43,22 +47,32 @@ export default function SalesTracker() {
           <p className="text-sm font-medium opacity-60 mt-4 lowercase tracking-tight">Real-time revenue monitoring and inventory health tracking.</p>
         </div>
         <div className="flex gap-4">
+          <div className="flex items-center gap-2 bg-page-bg border border-ink/5 p-1 rounded-full">
+            {["US", "UK"].map((r) => (
+              <button
+                key={r}
+                onClick={() => setRegion(r)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all",
+                  region === r ? "bg-ink text-white shadow-lg shadow-ink/20" : "opacity-40 hover:opacity-100"
+                )}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
           <button className="editorial-label border border-ink/10 px-6 py-2.5 rounded-full hover:bg-ink hover:text-white transition-all flex items-center">
             <Filter className="mr-2 h-3 w-3" />
             Category
-          </button>
-          <button className="editorial-label border border-ink/10 px-6 py-2.5 rounded-full hover:bg-ink hover:text-white transition-all flex items-center">
-            <Calendar className="mr-2 h-3 w-3" />
-            Range
           </button>
         </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
-          { label: 'Total Revenue', value: '$13,100', change: '+$2.4k', trend: 'up', icon: DollarSign },
-          { label: 'Units Sold', value: '145', change: '+12', trend: 'up', icon: ShoppingBag },
-          { label: 'Profit Margin', value: '38.4%', change: '-0.2%', trend: 'down', icon: TrendingUp },
+          { label: 'Total Revenue', value: `${currency}${region === 'UK' ? '13,100' : '15,850'}`, change: `+${currency}${region === 'UK' ? '2.4k' : '2.9k'}`, trend: 'up', icon: DollarSign },
+          { label: 'Units Sold', value: region === 'UK' ? '145' : '182', change: '+12', trend: 'up', icon: ShoppingBag },
+          { label: 'Profit Margin', value: region === 'UK' ? '38.4%' : '41.2%', change: region === 'UK' ? '-0.2%' : '+1.1%', trend: region === 'UK' ? 'down' : 'up', icon: TrendingUp },
         ].map((stat) => (
           <div key={stat.label} className="editorial-card p-10 flex flex-col justify-between hover:bg-brand-orange/[0.02] cursor-default group transition-colors">
             <div className="flex justify-between items-start mb-10">
@@ -84,7 +98,7 @@ export default function SalesTracker() {
         <div className="flex items-center justify-between mb-12">
           <div>
             <h3 className="text-3xl font-serif italic">Revenue Distribution</h3>
-            <p className="editorial-label !opacity-40">Daily financial trajectory (USD)</p>
+            <p className="editorial-label !opacity-40">Daily financial trajectory ({region === 'UK' ? 'GBP' : 'USD'})</p>
           </div>
           <div className="flex border border-ink/10 rounded-sm overflow-hidden">
             {['Revenue', 'Profit', 'Units'].map((tab, i) => (
@@ -113,7 +127,7 @@ export default function SalesTracker() {
                 dy={10} 
                 tickFormatter={(val) => val.split('-')[2]} 
               />
-              <YAxis axisLine={false} tickLine={false} tick={{fill: '#14141440', fontSize: 10, fontWeight: 700}} dx={-10} prefix="$" />
+              <YAxis axisLine={false} tickLine={false} tick={{fill: '#14141440', fontSize: 10, fontWeight: 700}} dx={-10} prefix={currency} />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#141414', border: 'none', borderRadius: '4px', color: '#fff' }}
               />
@@ -171,7 +185,7 @@ export default function SalesTracker() {
               <h3 className="text-4xl font-serif italic leading-tight">Archetype Auto-Restock Strategy</h3>
               <p className="mt-6 text-white/70 text-lg leading-relaxed font-medium">
                 Velocity modeling suggests restocking within 4 days for "Eco Espresso Maker" to avoid market displacement. 
-                Projected impact: <span className="text-white font-black">+$4,200</span>.
+                Projected impact: <span className="text-white font-black">+{currency}{region === 'UK' ? '3,400' : '4,200'}</span>.
               </p>
             </div>
             <button className="mt-12 bg-white text-brand-orange px-10 py-4 rounded-full text-[12px] font-black uppercase tracking-widest shadow-2xl shadow-brand-orange/40 hover:scale-105 transition-all active:scale-95 w-fit">

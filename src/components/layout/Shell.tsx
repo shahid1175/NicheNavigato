@@ -8,7 +8,9 @@ import {
   Menu, 
   X,
   Bell,
-  User
+  User,
+  Box,
+  ShoppingBag
 } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -18,6 +20,8 @@ import { motion, AnimatePresence } from "motion/react";
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Niche Finder', href: '/niche-finder', icon: Search },
+  { name: 'Product Database', href: '/product-database', icon: Box },
+  { name: 'Sourcing Center', href: '/sourcing', icon: ShoppingBag },
   { name: 'Market Trends', href: '/market-trends', icon: TrendingUp },
   { name: 'Competitor Analysis', href: '/competitor-analysis', icon: Users },
   { name: 'Sales Tracker', href: '/sales-tracker', icon: BarChart3 },
